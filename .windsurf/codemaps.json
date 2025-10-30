@@ -1,0 +1,122 @@
+{
+  "$schema": "https://windsurf.dev/schemas/codemaps.json",
+  "version": "1.0.0",
+  "locale": "ru",
+  "language": "russian",
+  "localization": {
+    "enabled": true,
+    "primaryLanguage": "ru",
+    "fallbackLanguage": "en"
+  },
+  "ui": {
+    "language": "ru",
+    "labels": {
+      "components": "Компоненты",
+      "screens": "Экраны",
+      "navigation": "Навигация",
+      "services": "Сервисы",
+      "store": "Хранилище",
+      "hooks": "Хуки",
+      "utils": "Утилиты",
+      "assets": "Ассеты",
+      "search": "Поиск",
+      "filter": "Фильтр",
+      "view": "Вид",
+      "details": "Детали",
+      "dependencies": "Зависимости",
+      "imports": "Импорты",
+      "exports": "Экспорты",
+      "functions": "Функции",
+      "classes": "Классы",
+      "interfaces": "Интерфейсы",
+      "types": "Типы",
+      "constants": "Константы",
+      "variables": "Переменные",
+      "methods": "Методы",
+      "properties": "Свойства"
+    }
+  },
+  "maps": {
+    "components": {
+      "path": "src/components/**/*.tsx",
+      "description": "Компоненты приложения",
+      "label": "Компоненты",
+      "category": "frontend"
+    },
+    "screens": {
+      "path": "src/screens/**/*.tsx",
+      "description": "Экраны приложения",
+      "label": "Экраны",
+      "category": "frontend"
+    },
+    "navigation": {
+      "path": "src/navigation/**/*.ts",
+      "description": "Навигация приложения",
+      "label": "Навигация",
+      "category": "frontend"
+    },
+    "services": {
+      "path": "src/services/**/*.ts",
+      "description": "Сервисы приложения",
+      "label": "Сервисы",
+      "category": "backend"
+    },
+    "store": {
+      "path": "src/store/**/*.ts",
+      "description": "Хранилище состояния",
+      "label": "Хранилище",
+      "category": "state"
+    },
+    "hooks": {
+      "path": "src/hooks/**/*.ts",
+      "description": "Кастомные хуки",
+      "label": "Хуки",
+      "category": "frontend"
+    },
+    "utils": {
+      "path": "src/utils/**/*.ts",
+      "description": "Вспомогательные утилиты",
+      "label": "Утилиты",
+      "category": "helpers"
+    },
+    "assets": {
+      "path": "assets/**/*",
+      "description": "Ассеты приложения",
+      "label": "Ассеты",
+      "category": "resources"
+    }
+  },
+  "ignore": [
+    "**/node_modules/**",
+    "**/__tests__/**",
+    "**/*.test.*",
+    "**/*.spec.*"
+  ],
+  "categories": {
+    "frontend": {
+      "label": "Фронтенд",
+      "color": "#61dafb",
+      "icon": "react"
+    },
+    "backend": {
+      "label": "Бэкенд",
+      "color": "#339933",
+      "icon": "server"
+    },
+    "state": {
+      "label": "Состояние",
+      "color": "#ff9500",
+      "icon": "state"
+    },
+    "helpers": {
+      "label": "Вспомогательное",
+      "color": "#8e44ad",
+      "icon": "utils"
+    },
+    "resources": {
+      "label": "Ресурсы",
+      "color": "#e74c3c",
+      "icon": "assets"
+    }
+  }
+}

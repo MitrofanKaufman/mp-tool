@@ -1,0 +1,277 @@
+openapi: 3.0.0
+info:
+  title: WebSocket API Server
+  description: |
+    # WebSocket API Server
+    
+    This is a production-ready WebSocket API server with JWT authentication.
+    
+    ## Authentication
+    
+    All WebSocket connections require JWT authentication using the `Sec-WebSocket-Protocol` header:
+    
+    ```
+    Sec-WebSocket-Protocol: Bearer <your_jwt_token_here>
+    ```
+    
+    ## Endpoints
+    
+    - `GET /ws` - WebSocket endpoint
+    - `GET /health` - Health check endpoint
+    - `GET /docs` - Swagger UI (development only)
+    - `GET /docs/json` - OpenAPI spec (development only)
+    
+  version: 1.0.0
+  contact:
+    name: Support
+    url: https://github.com/MitrofanKaufman/ws-api-server/issues
+    email: support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+tags:
+  - name: websocket
+    description: WebSocket endpoints
+  - name: admin
+    description: Admin endpoints (REST)
+  - name: system
+    description: System endpoints
+
+paths:
+  /ws:
+    get:
+      tags: [websocket]
+      summary: WebSocket connection endpoint
+      description: |
+        Establishes a WebSocket connection. Requires JWT authentication.
+        
+        ### Authentication
+        
+        The WebSocket handshake must include the JWT token in the `Sec-WebSocket-Protocol` header:
+        
+        ```
+        Sec-WebSocket-Protocol: Bearer <your_jwt_token_here>
+        ```
+        
+        ### Message Format
+        
+        All messages are JSON-encoded strings with the following structure:
+        
+        ```json
+        {
+          "type": "message_type",
+          "requestId": "unique_request_id",
+          "data": {}
+        }
+        ```
+        
+        ### Standard Message Types
+        
+        - `ping` - Server responds with `pong`
+        - `echo` - Server echoes back the message
+        - `task.create` - Create a new background task
+        - `task.status` - Get status of a task
+        
+      security:
+        - bearerAuth: []
+      responses:
+        '101':
+          description: WebSocket connection established
+          headers:
+            Upgrade:
+              schema:
+                type: string
+                example: websocket
+            Connection:
+              schema:
+                type: string
+                example: Upgrade
+        '401':
+          description: Unauthorized (invalid or missing token)
+        '426':
+          description: Upgrade Required (not a WebSocket request)
+      x-code-samples:
+        - lang: 'JavaScript'
+          source: |
+            const WebSocket = require('ws');
+            
+            const token = 'your_jwt_token_here';
+            const ws = new WebSocket('ws://localhost:8090/ws', {
+              headers: {
+                'Sec-WebSocket-Protocol': `Bearer ${token}`
+              }
+            });
+            
+            ws.on('open', () => {
+              console.log('Connected to WebSocket server');
+              
+              // Send a ping message
+              ws.send(JSON.stringify({
+                type: 'ping',
+                requestId: '123',
+                data: { timestamp: Date.now() }
+              }));
+            });
+            
+            ws.on('message', (data) => {
+              console.log('Received:', JSON.parse(data));
+            });
+            
+            ws.on('error', (error) => {
+              console.error('WebSocket error:', error);
+            });
+
+  /health:
+    get:
+      tags: [system]
+      summary: Health check endpoint
+      description: Returns the current health status of the API server
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: '2023-01-01T00:00:00Z'
+                  uptime:
+                    type: number
+                    format: float
+                    description: Server uptime in seconds
+                    example: 1234.56
+
+  /admin/status:
+    get:
+      tags: [admin]
+      summary: Get server status
+      description: Returns detailed server status and statistics (admin only)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Server status information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  connections:
+                    type: integer
+                    description: Number of active WebSocket connections
+                    example: 5
+                  memoryUsage:
+                    type: object
+                    properties:
+                      rss:
+                        type: integer
+                        description: Resident Set Size in bytes
+                        example: 12345678
+                      heapTotal:
+                        type: integer
+                        example: 12345678
+                      heapUsed:
+                        type: integer
+                        example: 1234567
+                      external:
+                        type: integer
+                        example: 12345
+                  uptime:
+                    type: number
+                    format: float
+                    description: Server uptime in seconds
+                    example: 1234.56
+        '401':
+          description: Unauthorized (admin access required)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication
+      
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Unauthorized"
+        code:
+          type: integer
+          format: int32
+          description: HTTP status code
+          example: 401
+        details:
+          type: object
+          description: Additional error details
+          
+    WebSocketMessage:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Message type
+          example: "ping"
+        requestId:
+          type: string
+          description: Unique request ID for matching responses
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        data:
+          type: object
+          description: Message payload
+          additionalProperties: true
+          
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        type:
+          type: string
+          example: "data_export"
+        status:
+          type: string
+          enum: ["pending", "processing", "completed", "failed"]
+          example: "pending"
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Completion percentage (0-100)
+          example: 50
+        result:
+          type: object
+          description: Task result (if completed)
+          additionalProperties: true
+        error:
+          type: string
+          description: Error message (if failed)
+          example: "Connection timeout"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-01-01T00:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2023-01-01T00:01:00Z"

@@ -1,0 +1,394 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Admin Messaging System <admin@example.com>
+Date: Fri, 12 Jan 2024 12:00:00 +0300
+Subject: [PATCH 05/10] Add messaging system with ideas, tickets and internal messages
+
+Create complete messaging system with:
+- Ideas management with priorities
+- User tickets with categories
+- Internal messaging between admins
+- Role-based access control
+- Read status tracking
+
+---
+ mock-data/messaging-mocks.js | 282 +++++++++++++++++++++++++++++++++++
+ server.js                     | 168 ++++++++++++++++++++-
+ 2 files changed, 449 insertions(+), 1 deletion(-)
+ create mode 100644 mock-data/messaging-mocks.js
+
+diff --git a/mock-data/messaging-mocks.js b/mock-data/messaging-mocks.js
+new file mode 100644
+index 0000000..1234567
+--- /dev/null
++++ b/mock-data/messaging-mocks.js
+@@ -0,0 +1,282 @@
++// mock-data/messaging-mocks.js
++
++// Mock data for ideas
++export const generateIdeas = () => {
++  const ideas = [];
++  const priorities = ['low', 'medium', 'high', 'critical'];
++  const statuses = ['new', 'in-progress', 'completed', 'rejected'];
++  const categories = ['feature', 'improvement', 'bugfix', 'ui-ux', 'performance'];
++  
++  const sampleIdeas = [
++    'Добавить темную тему в админку',
++    'Реализовать кэширование запросов к Wildberries',
++    'Добавить уведомления в Telegram',
++    'Создать мобильное приложение',
++    'Оптимизировать загрузку изображений',
++    'Добавить аналитику пользовательского поведения',
++    'Реализовать A/B тестирование',
++    'Создать систему шаблонов отчетов',
++    'Добавить экспорт данных в Excel',
++    'Реализовать массовое редактирование товаров'
++  ];
++  
++  const admins = ['alex', 'maria', 'ivan', 'olga', 'dmitry'];
++  
++  for (let i = 0; i < 15; i++) {
++    const created = new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000);
++    const updated = new Date(created.getTime() + Math.random() * 7 * 24 * 60 * 60 * 1000);
++    
++    ideas.push({
++      id: i + 1,
++      title: sampleIdeas[i % sampleIdeas.length] + ` #${i + 1}`,
++      description: `Подробное описание идеи ${i + 1}. Это улучшение поможет увеличить производительность системы и улучшить пользовательский опыт.`,
++      category: categories[i % categories.length],
++      priority: priorities[Math.floor(Math.random() * priorities.length)],
++      status: statuses[Math.floor(Math.random() * statuses.length)],
++      createdBy: admins[Math.floor(Math.random() * admins.length)],
++      assignedTo: Math.random() > 0.3 ? admins[Math.floor(Math.random() * admins.length)] : null,
++      votes: Math.floor(Math.random() * 20),
++      estimatedHours: Math.floor(Math.random() * 40) + 8,
++      createdAt: created.toISOString(),
++      updatedAt: updated.toISOString(),
++      tags: ['frontend', 'backend', 'database', 'ui'][Math.floor(Math.random() * 4)].split(','),
++      comments: Math.floor(Math.random() * 10)
++    });
++  }
++  
++  return ideas.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
++};
++
++// Mock data for tickets
++export const generateTickets = () => {
++  const tickets = [];
++  const statuses = ['open', 'in-progress', 'resolved', 'closed'];
++  const priorities = ['low', 'medium', 'high', 'urgent'];
++  const categories = [
++    { id: 1, name: 'Ошибка', color: '#ef4444', description: 'Сообщения об ошибках в системе' },
++    { id: 2, name: 'Вопрос', color: '#3b82f6', description: 'Вопросы по использованию системы' },
++    { id: 3, name: 'Предложение', color: '#10b981', description: 'Предложения по улучшению' },
++    { id: 4, name: 'Техническая поддержка', color: '#f59e0b', description: 'Технические вопросы' },
++    { id: 5, name: 'Системное', color: '#8b5cf6', description: 'Системные уведомления' }
++  ];
++  
++  const sampleMessages = [
++    'Не работает поиск по определенным запросам',
++    'Как экспортировать данные в CSV?',
++    'Предлагаю добавить фильтр по дате',
++    'Ошибка 500 при загрузке страницы товара',
++    'Медленно работает дашборд при большом количестве данных',
++    'Нужна возможность массового редактирования',
++    'Не приходят уведомления на email',
++    'Как настроить автоматический сбор данных?',
++    'Ошибка авторизации через социальные сети',
++    'Предлагаю добавить темную тему'
++  ];
++  
++  const users = ['user123', 'company_abc', 'individual_user', 'test_account', 'premium_user'];
++  const admins = ['alex', 'maria', 'ivan', 'olga'];
++  
++  // System messages
++  tickets.push({
++    id: 1,
++    type: 'system',
++    subject: 'Обновление системы',
++    message: 'Запланировано техническое обслуживание на 15.01.2024 с 02:00 до 04:00',
++    category: categories[4],
++    priority: 'medium',
++    status: 'open',
++    fromUser: 'system',
++    fromUserId: null,
++    assignedTo: null,
++    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
++    updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
++    readBy: [],
++    attachments: []
++  });
++  
++  tickets.push({
++    id: 2,
++    type: 'system',
++    subject: 'Новая версия API',
++    message: 'Вышла новая версия API Wildberries. Обновите клиенты до версии 2.5.',
++    category: categories[4],
++    priority: 'high',
++    status: 'open',
++    fromUser: 'system',
++    fromUserId: null,
++    assignedTo: null,
++    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
++    updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
++    readBy: ['alex'],
++    attachments: []
++  });
++  
++  // User tickets
++  for (let i = 3; i < 20; i++) {
++    const created = new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000);
++    const updated = new Date(created.getTime() + Math.random() * 3 * 24 * 60 * 60 * 1000);
++    const category = categories[Math.floor(Math.random() * (categories.length - 1))];
++    
++    tickets.push({
++      id: i,
++      type: 'user',
++      subject: sampleMessages[(i - 3) % sampleMessages.length],
++      message: `Подробное описание проблемы или вопроса от пользователя. Пользователь сообщает о следующей проблеме: ${sampleMessages[(i - 3) % sampleMessages.length]}. Требуется помощь специалиста.`,
++      category: category,
++      priority: priorities[Math.floor(Math.random() * priorities.length)],
++      status: statuses[Math.floor(Math.random() * statuses.length)],
++      fromUser: users[Math.floor(Math.random() * users.length)],
++      fromUserId: `user_${i}`,
++      assignedTo: Math.random() > 0.4 ? admins[Math.floor(Math.random() * admins.length)] : null,
++      createdAt: created.toISOString(),
++      updatedAt: updated.toISOString(),
++      readBy: Math.random() > 0.5 ? [admins[Math.floor(Math.random() * admins.length)]] : [],
++      attachments: Math.random() > 0.7 ? [
++        { name: 'screenshot.png', size: '2.1 MB', url: '#' },
++        { name: 'logs.txt', size: '156 KB', url: '#' }
++      ] : []
++    });
++  }
++  
++  return tickets.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
++};
++
++// Mock data for internal messages
++export const generateInternalMessages = () => {
++  const messages = [];
++  const priorities = ['low', 'normal', 'high', 'urgent'];
++  const specializations = ['frontend', 'backend', 'design', 'devops', 'analytics', 'management'];
++  
++  const roleHierarchy = {
++    'director': ['frontend', 'backend', 'design', 'devops', 'analytics', 'management'],
++    'team-lead': ['frontend', 'backend', 'design'],
++    'developer': ['frontend', 'backend'],
++    'designer': ['design'],
++    'analyst': ['analytics'],
++    'devops': ['devops']
++  };
++  
++  const admins = [
++    { id: 'alex', name: 'Алексей Петров', role: 'director', specialization: ['management'] },
++    { id: 'maria', name: 'Мария Иванова', role: 'team-lead', specialization: ['frontend', 'backend'] },
++    { id: 'ivan', name: 'Иван Сидоров', role: 'developer', specialization: ['backend'] },
++    { id: 'olga', name: 'Ольга Кузнецова', role: 'designer', specialization: ['design'] },
++    { id: 'dmitry', name: 'Дмитрий Смирнов', role: 'analyst', specialization: ['analytics'] },
++    { id: 'serg', name: 'Сергей Васильев', role: 'devops', specialization: ['devops'] }
++  ];
++  
++  const sampleMessages = [
++    'Нужна помощь с оптимизацией запроса к базе данных',
++    'Требуется дизайн для новой страницы отчетов',
++    'Обсудим архитектуру нового модуля?',
++    'Проблема с развертыванием на production',
++    'Нужны данные для аналитики пользовательского поведения',
++    'Код ревью для пулл реквеста #145',
++    'Планируем спринт на следующую неделю',
++    'Вопрос по интеграции с новым API Wildberries',
++    'Нужно обновить документацию для разработчиков',
++    'Обсудим приоритеты задач на этот квартал'
++  ];
++  
++  for (let i = 0; i < 25; i++) {
++    const fromAdmin = admins[Math.floor(Math.random() * admins.length)];
++    let toSpecialization;
++    let toAdmin = null;
++    
++    // 70% сообщений к специализации, 30% конкретному админу
++    if (Math.random() > 0.3) {
++      toSpecialization = specializations[Math.floor(Math.random() * specializations.length)];
++    } else {
++      toAdmin = admins.filter(a => a.id !== fromAdmin.id)[Math.floor(Math.random() * (admins.length - 1))];
++      toSpecialization = toAdmin.specialization[0];
++    }
++    
++    const created = new Date(Date.now() - Math.random() * 14 * 24 * 60 * 60 * 1000);
++    const read = Math.random() > 0.3;
++    
++    messages.push({
++      id: i + 1,
++      from: fromAdmin,
++      toSpecialization: toSpecialization,
++      toAdmin: toAdmin,
++      subject: sampleMessages[i % sampleMessages.length],
++      message: `Подробное содержание сообщения. ${sampleMessages[i % sampleMessages.length]}. Это сообщение требует внимания и возможно обсуждения с коллегами.`,
++      priority: priorities[Math.floor(Math.random() * priorities.length)],
++      createdAt: created.toISOString(),
++      read: read,
++      readAt: read ? new Date(created.getTime() + Math.random() * 60 * 60 * 1000).toISOString() : null,
++      replies: Math.floor(Math.random() * 5),
++      attachments: Math.random() > 0.8 ? [
++        { name: 'design.pdf', size: '4.2 MB' },
++        { name: 'specification.docx', size: '1.8 MB' }
++      ] : []
++    });
++  }
++  
++  return messages.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
++};
++
++// Get categories for tickets
++export const getTicketCategories = () => {
++  return [
++    { id: 1, name: 'Ошибка', color: '#ef4444', description: 'Сообщения об ошибках в системе', enabled: true },
++    { id: 2, name: 'Вопрос', color: '#3b82f6', description: 'Вопросы по использованию системы', enabled: true },
++    { id: 3, name: 'Предложение', color: '#10b981', description: 'Предложения по улучшению', enabled: true },
++    { id: 4, name: 'Техническая поддержка', color: '#f59e0b', description: 'Технические вопросы', enabled: true },
++    { id: 5, name: 'Системное', color: '#8b5cf6', description: 'Системные уведомления', enabled: true },
++    { id: 6, name: 'Безопасность', color: '#dc2626', description: 'Вопросы безопасности', enabled: false }
++  ];
++};
++
++// Get current user (mock)
++export const getCurrentUser = () => {
++  return {
++    id: 'alex',
++    name: 'Алексей Петров',
++    role: 'director',
++    specialization: ['management'],
++    permissions: ['read_all', 'manage_users', 'system_config']
++  };
++};
+diff --git a/server.js b/server.js
+index 1234567..abcdefg 100644
+--- a/server.js
++++ b/server.js
+@@ -2,7 +2,7 @@
+ import { createServer } from 'http';
+ import { WebSocketServer } from 'ws';
+ import { parse } from 'url';
+-import { mockData, generateMockTableData, generateMetricsData, generateBegetMetrics, systemServices, generateLogs } from './mock-data/index.js';
++import { mockData, generateMockTableData, generateMetricsData, generateBegetMetrics, systemServices, generateLogs, generateIdeas, generateTickets, generateInternalMessages, getTicketCategories, getCurrentUser } from './mock-data/index.js';
+ 
+ const server = createServer();
+ const wss = new WebSocketServer({ server, path: '/ws' });
+@@ -27,6 +27,12 @@ let settings = {
+   notifications: {
+     enabled: true,
+     email: 'admin@example.com'
++  },
++  messaging: {
++    autoAssign: true,
++    notifyNewTickets: true,
++    workingHours: '09:00-18:00',
++    responseTimeout: 24
+   }
+ };
+ 
+@@ -222,6 +228,78 @@ const handleLogs = (req, res) => {
+   });
+ };
+ 
++// Ideas endpoints
++const handleIdeas = (req, res) => {
++  const ideas = generateIdeas();
++  sendJsonResponse(res, 200, { ideas });
++};
++
++const handleCreateIdea = async (req, res) => {
++  try {
++    const data = await parseRequestBody(req);
++    const ideas = generateIdeas();
++    
++    const newIdea = {
++      id: Math.max(...ideas.map(i => i.id)) + 1,
++      ...data,
++      createdAt: new Date().toISOString(),
++      updatedAt: new Date().toISOString(),
++      votes: 0,
++      comments: 0
++    };
++    
++    sendJsonResponse(res, 201, { idea: newIdea });
++  } catch (error) {
++    sendJsonResponse(res, 500, { error: error.message });
++  }
++};
++
++// Tickets endpoints
++const handleTickets = (req, res) => {
++  const tickets = generateTickets();
++  sendJsonResponse(res, 200, { tickets });
++};
++
++const handleTicketCategories = (req, res) => {
++  const categories = getTicketCategories();
++  sendJsonResponse(res, 200, { categories });
++};
++
++const handleUpdateTicketCategory = async (req, res) => {
++  try {
++    const data = await parseRequestBody(req);
++    sendJsonResponse(res, 200, { 
++      success: true, 
++      category: data,
++      message: 'Category updated successfully'
++    });
++  } catch (error) {
++    sendJsonResponse(res, 500, { error: error.message });
++  }
++};
++
++const handleMarkTicketRead = async (req, res) => {
++  try {
++    const { ticketId } = await parseRequestBody(req);
++    const currentUser = getCurrentUser();
++    
++    sendJsonResponse(res, 200, {
++      success: true,
++      ticketId,
++      readBy: currentUser.id,
++      message: 'Ticket marked as read'
++    });
++  } catch (error) {
++    sendJsonResponse(res, 500, { error: error.message });
++  }
++};
++
++// Internal messages endpoints
++const handleInternalMessages = (req, res) => {
++  const messages = generateInternalMessages();
++  sendJsonResponse(res, 200, { messages });
++};
++
+ // Swagger documentation
+ const handleSwagger = (req, res) => {
+   try {
+@@ -289,6 +367,22 @@ server.on('request', async (req, res) => {
+     if (pathname === '/admin/settings') return await handleSettings(req, res);
+     if (pathname === '/admin/logs') return handleLogs(req, res);
+     if (pathname === '/docs/swagger.json') return handleSwagger(req, res);
++    
++    // Messaging system routes
++    if (pathname === '/admin/ideas' && req.method === 'GET') return handleIdeas(req, res);
++    if (pathname === '/admin/ideas' && req.method === 'POST') return await handleCreateIdea(req, res);
++    
++    if (pathname === '/admin/tickets' && req.method === 'GET') return handleTickets(req, res);
++    if (pathname === '/admin/tickets/categories' && req.method === 'GET') return handleTicketCategories(req, res);
++    if (pathname === '/admin/tickets/categories' && req.method === 'PUT') return await handleUpdateTicketCategory(req, res);
++    if (pathname === '/admin/tickets/mark-read' && req.method === 'POST') return await handleMarkTicketRead(req, res);
++    
++    if (pathname === '/admin/messages/internal' && req.method === 'GET') return handleInternalMessages(req, res);
++    if (pathname === '/admin/messages/internal' && req.method === 'POST') {
++      // Handle new internal message
++      const data = await parseRequestBody(req);
++      return sendJsonResponse(res, 201, { message: { id: Date.now(), ...data, createdAt: new Date().toISOString() } });
++    }
+ 
+     // Database and queue routes
+     if (req.method === 'GET' && pathname.match(/^\/api\/(t|v)1\/db\/tables$/)) {
+-- 
+2.34.1

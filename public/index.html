@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket API Test Client</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .panel {
+            flex: 1;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        #log {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-left: 3px solid #3498db;
+            background-color: #f8f9fa;
+        }
+        .log-error {
+            border-left-color: #e74c3c;
+            color: #c0392b;
+        }
+        .log-success {
+            border-left-color: #2ecc71;
+            color: #27ae60;
+        }
+        .connection-status {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .status-connected {
+            background-color: #2ecc71;
+        }
+        .status-disconnected {
+            background-color: #e74c3c;
+        }
+        .status-connecting {
+            background-color: #f39c12;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebSocket API Test Client</h1>
+    
+    <div class="container">
+        <div class="panel">
+            <h2>Connection</h2>
+            <div class="form-group">
+                <label for="serverUrl">Server URL:</label>
+                <input type="text" id="serverUrl" value="ws://localhost:8090/ws">
+            </div>
+            <div class="form-group">
+                <label for="jwtToken">JWT Token:</label>
+                <textarea id="jwtToken" rows="4" placeholder="Enter your JWT token"></textarea>
+            </div>
+            <div class="form-group">
+                <button id="connectBtn">Connect</button>
+                <button id="disconnectBtn" disabled>Disconnect</button>
+                <span id="connectionStatus">
+                    <span class="connection-status status-disconnected"></span>
+                    <span>Disconnected</span>
+                </span>
+            </div>
+
+            <h2>Send Message</h2>
+            <div class="form-group">
+                <label for="messageType">Message Type:</label>
+                <select id="messageType">
+                    <option value="ping">Ping</option>
+                    <option value="echo">Echo</option>
+                    <option value="task">Create Task</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="messageData">Message Data (JSON):</label>
+                <textarea id="messageData" rows="4" placeholder='{"key": "value"}'>{"text": "Hello, WebSocket!"}</textarea>
+            </div>
+            <button id="sendBtn" disabled>Send Message</button>
+        </div>
+
+        <div class="panel">
+            <h2>Log</h2>
+            <div class="form-group">
+                <button id="clearLogBtn">Clear Log</button>
+            </div>
+            <div id="log"></div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const sendBtn = document.getElementById('sendBtn');
+        const clearLogBtn = document.getElementById('clearLogBtn');
+        const serverUrlInput = document.getElementById('serverUrl');
+        const jwtTokenInput = document.getElementById('jwtToken');
+        const messageTypeSelect = document.getElementById('messageType');
+        const messageDataInput = document.getElementById('messageData');
+        const logElement = document.getElementById('log');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const statusIndicator = connectionStatus.querySelector('.connection-status');
+        const statusText = connectionStatus.querySelector('span:last-child');
+
+        let socket = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        let reconnectTimeout = null;
+
+        // Event Listeners
+        connectBtn.addEventListener('click', connect);
+        disconnectBtn.addEventListener('click', disconnect);
+        sendBtn.addEventListener('click', sendMessage);
+        clearLogBtn.addEventListener('click', clearLog);
+
+        // Initialize with test token (for development)
+        if (window.location.hostname === 'localhost') {
+            const testToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOjEsImlhdCI6MTYxNzM2NjQwMCwiZXhwIjoxNjIwOTY2NDAwfQ.4QvXQ6Jg8XQ5Q4Q5Q4Q5Q4Q5Q4Q5Q4Q5Q4Q5Q4Q5Q4';
+            jwtTokenInput.value = testToken;
+        }
+
+        // WebSocket Functions
+        function connect() {
+            if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+                log('Already connected or connecting', 'warn');
+                return;
+            }
+
+            const url = serverUrlInput.value.trim();
+            const token = jwtTokenInput.value.trim();
+
+            if (!url) {
+                log('Please enter a server URL', 'error');
+                return;
+            }
+
+            if (!token) {
+                log('Please enter a JWT token', 'error');
+                return;
+            }
+
+            updateConnectionStatus('connecting');
+            log(`Connecting to ${url}...`);
+
+            try {
+                socket = new WebSocket(url, ['Bearer ' + token]);
+
+                socket.onopen = () => {
+                    log('Connected to WebSocket server', 'success');
+                    reconnectAttempts = 0;
+                    updateConnectionStatus('connected');
+                    updateUI(true);
+                };
+
+                socket.onmessage = (event) => {
+                    let data;
+                    try {
+                        data = JSON.parse(event.data);
+                        log('Received:', 'info', data);
+                    } catch (e) {
+                        log('Received (raw): ' + event.data, 'info');
+                    }
+                };
+
+                socket.onerror = (error) => {
+                    log('WebSocket error: ' + JSON.stringify(error), 'error');
+                    updateConnectionStatus('error');
+                };
+
+                socket.onclose = (event) => {
+                    log(`Disconnected (code: ${event.code}, reason: ${event.reason || 'No reason provided'})`, 'warn');
+                    updateConnectionStatus('disconnected');
+                    updateUI(false);
+                    
+                    // Attempt to reconnect if not manually disconnected
+                    if (event.code !== 1000 && reconnectAttempts < maxReconnectAttempts) {
+                        reconnectAttempts++;
+                        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000); // Exponential backoff, max 30s
+                        log(`Attempting to reconnect (${reconnectAttempts}/${maxReconnectAttempts}) in ${delay/1000}s...`);
+                        
+                        if (reconnectTimeout) clearTimeout(reconnectTimeout);
+                        reconnectTimeout = setTimeout(connect, delay);
+                    }
+                };
+
+            } catch (error) {
+                log('Error creating WebSocket: ' + error.message, 'error');
+                updateConnectionStatus('error');
+                updateUI(false);
+            }
+        }
+
+        function disconnect() {
+            if (socket) {
+                if (socket.readyState === WebSocket.OPEN) {
+                    socket.close(1000, 'User disconnected');
+                } else {
+                    socket.close();
+                }
+                socket = null;
+            }
+            updateConnectionStatus('disconnected');
+            updateUI(false);
+            log('Disconnected from server');
+        }
+
+        function sendMessage() {
+            if (!socket || socket.readyState !== WebSocket.OPEN) {
+                log('Not connected to server', 'error');
+                return;
+            }
+
+            const type = messageTypeSelect.value;
+            let data = {};
+            
+            try {
+                const inputData = messageDataInput.value.trim() || '{}';
+                data = JSON.parse(inputData);
+                
+                const message = { type, ...data };
+                socket.send(JSON.stringify(message));
+                log('Sent:', 'info', message);
+                
+            } catch (error) {
+                log('Error parsing message data: ' + error.message, 'error');
+            }
+        }
+
+        // UI Functions
+        function updateUI(connected) {
+            connectBtn.disabled = connected;
+            disconnectBtn.disabled = !connected;
+            sendBtn.disabled = !connected;
+            serverUrlInput.disabled = connected;
+            jwtTokenInput.disabled = connected;
+        }
+
+        function updateConnectionStatus(status) {
+            // Remove all status classes
+            statusIndicator.className = 'connection-status';
+            
+            switch (status) {
+                case 'connected':
+                    statusIndicator.classList.add('status-connected');
+                    statusText.textContent = 'Connected';
+                    break;
+                case 'connecting':
+                    statusIndicator.classList.add('status-connecting');
+                    statusText.textContent = 'Connecting...';
+                    break;
+                case 'error':
+                    statusIndicator.classList.add('status-error');
+                    statusText.textContent = 'Error';
+                    break;
+                default: // disconnected
+                    statusIndicator.classList.add('status-disconnected');
+                    statusText.textContent = 'Disconnected';
+            }
+        }
+
+        function log(message, type = 'info', data = null) {
+            const timestamp = new Date().toISOString().substr(11, 12);
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            
+            let logMessage = `[${timestamp}] ${message}`;
+            if (data) {
+                try {
+                    logMessage += '\n' + JSON.stringify(data, null, 2);
+                } catch (e) {
+                    logMessage += ' ' + String(data);
+                }
+            }
+            
+            logEntry.textContent = logMessage;
+            logElement.appendChild(logEntry);
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            logElement.innerHTML = '';
+        }
+
+        // Auto-connect if URL has ?autoconnect=true
+        if (new URLSearchParams(window.location.search).get('autoconnect') === 'true') {
+            connect();
+        }
+    </script>
+</body>
+</html>
