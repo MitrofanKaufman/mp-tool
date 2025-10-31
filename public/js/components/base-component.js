@@ -1,31 +1,34 @@
-// Базовый класс для всех компонентов
-export class BaseComponent extends HTMLElement {
-    constructor() {
-        super();
+export const CONFIG = {
+    apiBase: window.location.origin,
+    useMocks: true,
+    autoRefreshInterval: 30000,
+    tabs: {
+        'queue': {
+            title: 'Очередь заданий',
+            component: 'queue-monitor'
+        },
+        'server': {
+            title: 'Статус сервера',
+            component: 'server-status'
+        },
+        'tests': {
+            title: 'Тестирование',
+            component: 'test-runner'
+        },
+        'tickets': {
+            title: 'Обращения',
+            component: 'tickets-panel'
+        },
+        'settings': {
+            title: 'Настройки',
+            component: 'settings-panel'
+        }
     }
+};
 
-    connectedCallback() {
-        this.render();
-    }
-
-    showError(message) {
-        console.error('Component error:', message);
-        this.dispatchEvent(new CustomEvent('component-error', {
-            detail: { message },
-            bubbles: true
-        }));
-    }
-
-    showSuccess(message) {
-        console.log('Component success:', message);
-        this.dispatchEvent(new CustomEvent('component-success', {
-            detail: { message },
-            bubbles: true
-        }));
-    }
-
-    // Метод для рендеринга, должен быть переопределен в дочерних классах
-    render() {
-        throw new Error('Метод render должен быть реализован в дочернем классе');
-    }
-}
+export const APP_STATE = {
+    currentTab: null,
+    lastUpdate: null,
+    useMocks: true,
+    components: new Map()
+};
