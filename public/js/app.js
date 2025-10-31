@@ -1,5 +1,5 @@
 // Импорт модулей
-import { AdminDashboard } from './modules/dashboard-core.js';
+import { AdminDashboard } from './dashboard-core.js';
 
 // Глобальная обработка ошибок
 window.addEventListener('error', (event) => {

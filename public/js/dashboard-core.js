@@ -1,5 +1,5 @@
 import { CONFIG, APP_STATE } from './config.js';
-import { ApiClient } from './api-client.js';
+import { ApiClient } from './modules/api-client.js';
 
 // Временные заглушки для отсутствующих модулей
 class NotificationManager {
@@ -58,15 +58,15 @@ export class AdminDashboard {
         console.log('🔄 Setting up components...');
 
         const components = {
-            'metrics-panel': () => import('../components/metrics.js'),
-            'ideas-panel': () => import('../components/ideas.js'),
-            'messages-panel': () => import('../components/messages-panel.js'),
-            'tickets-panel': () => import('../components/tickets.js'),
-            'module-tester': () => import('../components/module-tester.js'),
-            'database-explorer': () => import('../components/database-explorer.js'),
-            'queue-monitor': () => import('../components/queue-monitor.js'),
-            'test-runner': () => import('../components/test-runner.js'),
-            'settings-panel': () => import('../components/settings.js')
+            'metrics-panel': () => import('./components/metrics.js'),
+            'ideas-panel': () => import('./components/ideas.js'),
+            'messages-panel': () => import('./components/messages-panel.js'),
+            'tickets-panel': () => import('./components/tickets.js'),
+            'module-tester': () => import('./components/module-tester.js'),
+            'database-explorer': () => import('./components/database-explorer.js'),
+            'queue-monitor': () => import('./components/queue-monitor.js'),
+            'test-runner': () => import('./components/test-runner.js'),
+            'settings-panel': () => import('./components/settings.js')
         };
 
         for (const [tag, loader] of Object.entries(components)) {

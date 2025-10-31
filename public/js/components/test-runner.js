@@ -252,9 +252,10 @@ class TestRunner extends HTMLElement {
     async runSingleTest(testId) {
         const startTime = Date.now();
         const mode = this.querySelector('input[name="test-mode"]:checked').value;
+        const apiBase = window.adminDashboard?.apiBase || window.location.origin;
         
         try {
-            const response = await fetch(`${window.adminDashboard.apiBase}/api/${mode}1/test/${testId}`, {
+            const response = await fetch(`${apiBase}/api/${mode}1/test/${testId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

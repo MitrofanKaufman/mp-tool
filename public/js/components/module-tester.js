@@ -183,7 +183,8 @@ class ModuleTester extends HTMLElement {
 
     async makeApiRequest(mode, module, query) {
         const version = this.apiVersion;
-        const url = `${window.adminDashboard.apiBase}/api/${mode}${version}/${module}`;
+        const apiBase = window.adminDashboard?.apiBase || window.location.origin;
+        const url = `${apiBase}/api/${mode}${version}/${module}`;
         
         const response = await fetch(url, {
             method: 'POST',

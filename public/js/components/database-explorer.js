@@ -82,7 +82,8 @@ class DatabaseExplorer extends HTMLElement {
         try {
             tablesList.innerHTML = '⏳ Загрузка таблиц...';
             
-            const response = await fetch(`${window.adminDashboard.apiBase}/api/${mode}1/db/tables`);
+            const apiBase = window.adminDashboard?.apiBase || window.location.origin;
+            const response = await fetch(`${apiBase}/api/${mode}1/db/tables`);
             const data = await response.json();
             
             let html = '<div class="tables-grid">';
@@ -137,7 +138,8 @@ class DatabaseExplorer extends HTMLElement {
         resultOutput.textContent = '⏳ Загрузка данных...';
 
         try {
-            const response = await fetch(`${window.adminDashboard.apiBase}/api/${mode}1/db/query`, {
+            const apiBase = window.adminDashboard?.apiBase || window.location.origin;
+        const response = await fetch(`${apiBase}/api/${mode}1/db/query`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

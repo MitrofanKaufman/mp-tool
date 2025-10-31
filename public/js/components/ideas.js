@@ -204,7 +204,8 @@ class IdeasPanel extends HTMLElement {
 
     async loadIdeas() {
         try {
-            const response = await fetch(`${window.adminDashboard.apiBase}/admin/ideas`);
+            const apiBase = window.adminDashboard?.apiBase || window.location.origin;
+            const response = await fetch(`${apiBase}/admin/ideas`);
             const data = await response.json();
             this.ideas = data.ideas;
             this.renderIdeas();
@@ -356,7 +357,8 @@ class IdeasPanel extends HTMLElement {
         };
 
         try {
-            const response = await fetch(`${window.adminDashboard.apiBase}/admin/ideas`, {
+            const apiBase = window.adminDashboard?.apiBase || window.location.origin;
+            const response = await fetch(`${apiBase}/admin/ideas`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(ideaData)

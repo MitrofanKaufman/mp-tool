@@ -194,9 +194,12 @@ class MessagesPanel extends HTMLElement {
 
     async loadMessages() {
         try {
-            // В реальном приложении здесь был бы запрос к API
-            // const response = await fetch('/api/messages');
-            // this.messages = await response.json();
+            const apiBase = window.adminDashboard?.apiBase || window.location.origin;
+            const response = await fetch(`${apiBase}/api/messages`);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            this.messages = await response.json();
             
             // Временные моковые данные
             this.messages = [
@@ -297,11 +300,14 @@ class MessagesPanel extends HTMLElement {
 
     async sendMessage(formData) {
         try {
-            // В реальном приложении здесь был бы запрос к API
-            // const response = await fetch('/api/messages', {
-            //     method: 'POST',
-            //     body: formData
-            // });
+            const apiBase = window.adminDashboard?.apiBase || window.location.origin;
+            const response = await fetch(`${apiBase}/api/messages`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(Object.fromEntries(formData))
+            });
             // const result = await response.json();
             
             // Добавляем новое сообщение в начало списка
