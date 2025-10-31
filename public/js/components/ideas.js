@@ -1,0 +1,384 @@
+// admin-dashboard/components/ideas.js
+// Описание: Компонент для управления идеями и предложениями по улучшению системы
+// Логика: Клиентская
+// Зависимости: HTMLElement, fetch API
+// Примечания: Реализует создание, просмотр и управление идеями с возможностью фильтрации и сортировки
+
+class IdeasPanel extends HTMLElement {
+    constructor() {
+        super();
+        this.ideas = [];
+        this.filters = {
+            status: 'all',
+            priority: 'all',
+            category: 'all',
+            search: ''
+        };
+        this.sortBy = 'created-desc';
+    }
+
+    connectedCallback() {
+        this.render();
+        this.loadIdeas();
+    }
+
+    render() {
+        this.innerHTML = `
+            <div class="card">
+                <div class="ideas-header">
+                    <h2>💡 Система идей</h2>
+                    <button class="btn btn-primary" id="new-idea-btn">
+                        ➕ Новая идея
+                    </button>
+                </div>
+                <p>Предлагайте и обсуждайте улучшения для системы</p>
+
+                <div class="ideas-controls">
+                    <div class="filters-grid">
+                        <div class="form-group">
+                            <label>Статус:</label>
+                            <select class="form-control" id="status-filter">
+                                <option value="all">Все статусы</option>
+                                <option value="new">Новые</option>
+                                <option value="in-progress">В работе</option>
+                                <option value="completed">Завершены</option>
+                                <option value="rejected">Отклонены</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Приоритет:</label>
+                            <select class="form-control" id="priority-filter">
+                                <option value="all">Все приоритеты</option>
+                                <option value="critical">Критический</option>
+                                <option value="high">Высокий</option>
+                                <option value="medium">Средний</option>
+                                <option value="low">Низкий</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Категория:</label>
+                            <select class="form-control" id="category-filter">
+                                <option value="all">Все категории</option>
+                                <option value="feature">Функционал</option>
+                                <option value="improvement">Улучшение</option>
+                                <option value="bugfix">Исправление</option>
+                                <option value="ui-ux">UI/UX</option>
+                                <option value="performance">Производительность</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Сортировка:</label>
+                            <select class="form-control" id="sort-by">
+                                <option value="created-desc">Новые сначала</option>
+                                <option value="created-asc">Старые сначала</option>
+                                <option value="priority-desc">По приоритету</option>
+                                <option value="votes-desc">По голосам</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" id="search-ideas" class="form-control" placeholder="🔍 Поиск по идеям...">
+                    </div>
+                </div>
+
+                <div class="ideas-stats">
+                    <div class="stat-card">
+                        <span class="stat-number">${this.getStats().total}</span>
+                        <span class="stat-label">Всего идей</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${this.getStats().inProgress}</span>
+                        <span class="stat-label">В работе</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${this.getStats().completed}</span>
+                        <span class="stat-label">Завершено</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${this.getStats().highPriority}</span>
+                        <span class="stat-label">Высокий приоритет</span>
+                    </div>
+                </div>
+
+                <div id="ideas-list" class="ideas-list">
+                    <div class="loading">Загрузка идей...</div>
+                </div>
+            </div>
+
+            <!-- Modal for new idea -->
+            <div id="new-idea-modal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>💡 Новая идея</h3>
+                        <button class="close-modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="new-idea-form">
+                            <div class="form-group">
+                                <label>Заголовок:</label>
+                                <input type="text" class="form-control" name="title" required 
+                                       placeholder="Краткое описание идеи">
+                            </div>
+                            <div class="form-group">
+                                <label>Подробное описание:</label>
+                                <textarea class="form-control" name="description" rows="4" 
+                                          placeholder="Опишите идею подробно..."></textarea>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Категория:</label>
+                                    <select class="form-control" name="category" required>
+                                        <option value="feature">Функционал</option>
+                                        <option value="improvement">Улучшение</option>
+                                        <option value="bugfix">Исправление</option>
+                                        <option value="ui-ux">UI/UX</option>
+                                        <option value="performance">Производительность</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Приоритет:</label>
+                                    <select class="form-control" name="priority" required>
+                                        <option value="low">Низкий</option>
+                                        <option value="medium">Средний</option>
+                                        <option value="high">Высокий</option>
+                                        <option value="critical">Критический</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Теги (через запятую):</label>
+                                <input type="text" class="form-control" name="tags" 
+                                       placeholder="frontend, backend, ui, ...">
+                            </div>
+                            <div class="form-group">
+                                <label>Оценка времени (часы):</label>
+                                <input type="number" class="form-control" name="estimatedHours" 
+                                       min="1" max="200" value="8">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" id="cancel-idea">Отмена</button>
+                        <button class="btn btn-primary" id="submit-idea">💾 Сохранить идею</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        this.setupEventListeners();
+    }
+
+    setupEventListeners() {
+        // Filters
+        this.querySelector('#status-filter').addEventListener('change', (e) => {
+            this.filters.status = e.target.value;
+            this.renderIdeas();
+        });
+        
+        this.querySelector('#priority-filter').addEventListener('change', (e) => {
+            this.filters.priority = e.target.value;
+            this.renderIdeas();
+        });
+        
+        this.querySelector('#category-filter').addEventListener('change', (e) => {
+            this.filters.category = e.target.value;
+            this.renderIdeas();
+        });
+        
+        this.querySelector('#sort-by').addEventListener('change', (e) => {
+            this.sortBy = e.target.value;
+            this.renderIdeas();
+        });
+        
+        this.querySelector('#search-ideas').addEventListener('input', (e) => {
+            this.filters.search = e.target.value;
+            this.renderIdeas();
+        });
+
+        // New idea modal
+        this.querySelector('#new-idea-btn').addEventListener('click', () => this.showNewIdeaModal());
+        this.querySelector('.close-modal').addEventListener('click', () => this.hideModal());
+        this.querySelector('#cancel-idea').addEventListener('click', () => this.hideModal());
+        this.querySelector('#submit-idea').addEventListener('click', () => this.submitIdea());
+    }
+
+    async loadIdeas() {
+        try {
+            const response = await fetch(`${window.adminDashboard.apiBase}/admin/ideas`);
+            const data = await response.json();
+            this.ideas = data.ideas;
+            this.renderIdeas();
+        } catch (error) {
+            this.showError('Ошибка загрузки идей: ' + error.message);
+        }
+    }
+
+    renderIdeas() {
+        const filteredIdeas = this.filterAndSortIdeas();
+        const ideasList = this.querySelector('#ideas-list');
+        
+        if (filteredIdeas.length === 0) {
+            ideasList.innerHTML = '<div class="no-data">Идеи не найдены</div>';
+            return;
+        }
+
+        ideasList.innerHTML = filteredIdeas.map(idea => `
+            <div class="idea-item" data-id="${idea.id}">
+                <div class="idea-header">
+                    <div class="idea-title">
+                        <h4>${idea.title}</h4>
+                        <div class="idea-meta">
+                            <span class="badge category-${idea.category}">${this.getCategoryLabel(idea.category)}</span>
+                            <span class="badge priority-${idea.priority}">${this.getPriorityLabel(idea.priority)}</span>
+                            <span class="badge status-${idea.status}">${this.getStatusLabel(idea.status)}</span>
+                        </div>
+                    </div>
+                    <div class="idea-actions">
+                        <button class="btn-icon" title="Проголосовать">👍 ${idea.votes}</button>
+                        <button class="btn-icon" title="Комментарии">💬 ${idea.comments}</button>
+                        <button class="btn-icon" title="Редактировать">✏️</button>
+                    </div>
+                </div>
+                <div class="idea-body">
+                    <p>${idea.description}</p>
+                    <div class="idea-details">
+                        <span>⏱️ ${idea.estimatedHours}ч</span>
+                        <span>👤 ${idea.createdBy}</span>
+                        <span>📅 ${new Date(idea.createdAt).toLocaleDateString()}</span>
+                        ${idea.assignedTo ? `<span>🎯 Назначено: ${idea.assignedTo}</span>` : ''}
+                    </div>
+                    ${idea.tags && idea.tags.length > 0 ? `
+                        <div class="idea-tags">
+                            ${idea.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    filterAndSortIdeas() {
+        let filtered = this.ideas.filter(idea => {
+            const matchesStatus = this.filters.status === 'all' || idea.status === this.filters.status;
+            const matchesPriority = this.filters.priority === 'all' || idea.priority === this.filters.priority;
+            const matchesCategory = this.filters.category === 'all' || idea.category === this.filters.category;
+            const matchesSearch = !this.filters.search || 
+                idea.title.toLowerCase().includes(this.filters.search.toLowerCase()) ||
+                idea.description.toLowerCase().includes(this.filters.search.toLowerCase());
+            
+            return matchesStatus && matchesPriority && matchesCategory && matchesSearch;
+        });
+
+        // Sort ideas
+        filtered.sort((a, b) => {
+            switch (this.sortBy) {
+                case 'created-desc':
+                    return new Date(b.createdAt) - new Date(a.createdAt);
+                case 'created-asc':
+                    return new Date(a.createdAt) - new Date(b.createdAt);
+                case 'priority-desc':
+                    return this.getPriorityValue(b.priority) - this.getPriorityValue(a.priority);
+                case 'votes-desc':
+                    return b.votes - a.votes;
+                default:
+                    return 0;
+            }
+        });
+
+        return filtered;
+    }
+
+    getPriorityValue(priority) {
+        const values = { 'critical': 4, 'high': 3, 'medium': 2, 'low': 1 };
+        return values[priority] || 0;
+    }
+
+    getCategoryLabel(category) {
+        const labels = {
+            'feature': 'Функционал',
+            'improvement': 'Улучшение', 
+            'bugfix': 'Исправление',
+            'ui-ux': 'UI/UX',
+            'performance': 'Производительность'
+        };
+        return labels[category] || category;
+    }
+
+    getPriorityLabel(priority) {
+        const labels = {
+            'critical': 'Критический',
+            'high': 'Высокий',
+            'medium': 'Средний', 
+            'low': 'Низкий'
+        };
+        return labels[priority] || priority;
+    }
+
+    getStatusLabel(status) {
+        const labels = {
+            'new': 'Новая',
+            'in-progress': 'В работе',
+            'completed': 'Завершена',
+            'rejected': 'Отклонена'
+        };
+        return labels[status] || status;
+    }
+
+    getStats() {
+        return {
+            total: this.ideas.length,
+            inProgress: this.ideas.filter(i => i.status === 'in-progress').length,
+            completed: this.ideas.filter(i => i.status === 'completed').length,
+            highPriority: this.ideas.filter(i => i.priority === 'high' || i.priority === 'critical').length
+        };
+    }
+
+    showNewIdeaModal() {
+        this.querySelector('#new-idea-modal').style.display = 'block';
+    }
+
+    hideModal() {
+        this.querySelector('#new-idea-modal').style.display = 'none';
+        this.querySelector('#new-idea-form').reset();
+    }
+
+    async submitIdea() {
+        const form = this.querySelector('#new-idea-form');
+        const formData = new FormData(form);
+        
+        const ideaData = {
+            title: formData.get('title'),
+            description: formData.get('description'),
+            category: formData.get('category'),
+            priority: formData.get('priority'),
+            tags: formData.get('tags').split(',').map(tag => tag.trim()).filter(tag => tag),
+            estimatedHours: parseInt(formData.get('estimatedHours'))
+        };
+
+        try {
+            const response = await fetch(`${window.adminDashboard.apiBase}/admin/ideas`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(ideaData)
+            });
+            
+            if (response.ok) {
+                this.hideModal();
+                this.loadIdeas(); // Reload ideas
+                this.showSuccess('Идея успешно создана!');
+            }
+        } catch (error) {
+            this.showError('Ошибка создания идеи: ' + error.message);
+        }
+    }
+
+    showSuccess(message) {
+        alert('✅ ' + message);
+    }
+
+    showError(message) {
+        alert('❌ ' + message);
+    }
+}
+
+customElements.define('ideas-panel', IdeasPanel);

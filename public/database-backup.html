@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wildberries Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/animations.css">
+    <link rel="stylesheet" href="/css/variables.css">
+</head>
+<body>
+<div class="dashboard">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">Wildberries Admin</div>
+        <nav>
+            <a href="/dashboard/metrics" class="nav-item active" data-tab="metrics">📊 Метрики</a>
+            <a href="/dashboard/ideas" class="nav-item" data-tab="ideas">💡 Идеи</a>
+            <a href="/dashboard/messages" class="nav-item" data-tab="messages">✉️ Сообщения</a>
+            <a href="/dashboard/tickets" class="nav-item" data-tab="tickets">🎫 Обращения</a>
+            <a href="/dashboard/modules" class="nav-item" data-tab="modules">🧩 Модули</a>
+            <a href="/dashboard/database" class="nav-item" data-tab="database">💾 База данных</a>
+            <a href="/dashboard/queue" class="nav-item" data-tab="queue">⏳ Очередь</a>
+            <a href="/dashboard/tests" class="nav-item" data-tab="tests">🧪 Тесты</a>
+            <a href="/dashboard/settings" class="nav-item" data-tab="settings">⚙️ Настройки</a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <main class="content">
+            <!-- Tab Content -->
+            <div id="metrics" class="tab-content active">
+                <metrics-panel></metrics-panel>
+            </div>
+            <div id="ideas" class="tab-content">
+                <ideas-panel></ideas-panel>
+            </div>
+            <div id="messages" class="tab-content">
+                <messages-panel></messages-panel>
+            </div>
+            <div id="tickets" class="tab-content">
+                <tickets-panel></tickets-panel>
+            </div>
+            <div id="modules" class="tab-content">
+                <module-tester></module-tester>
+            </div>
+            <div id="database" class="tab-content">
+                <database-explorer></database-explorer>
+            </div>
+            <div id="queue" class="tab-content">
+                <queue-monitor></queue-monitor>
+            </div>
+            <div id="tests" class="tab-content">
+                <test-runner></test-runner>
+            </div>
+            <div id="settings" class="tab-content">
+                <settings-panel></settings-panel>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="last-update" id="lastUpdate">Обновлено: --:--:--</div>
+                <div class="server-status">
+                    <span class="status-dot online"></span>
+                    <span>Сервер онлайн</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script type="module" src="/js/app.js"></script>
+</body>
+</html>

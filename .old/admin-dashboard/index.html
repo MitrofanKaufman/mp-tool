@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wildberries Data Collector - Admin Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Wildberries Data Collector</h1>
+            <div class="server-status" id="serverStatus">
+                <span class="status-indicator"></span>
+                <span>Проверка сервера...</span>
+            </div>
+        </header>
+
+        <nav class="sidebar">
+            <div class="nav-section">
+                <h3>Модули сбора</h3>
+                <button class="nav-btn active" data-tab="modules">Тестирование модулей</button>
+                <button class="nav-btn" data-tab="database">База данных</button>
+                <button class="nav-btn" data-tab="queue">Очередь заданий</button>
+                <button class="nav-btn" data-tab="server">Статус сервера</button>
+                <button class="nav-btn" data-tab="tests">Комплексные тесты</button>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div id="modules" class="tab-content active">
+                <module-tester></module-tester>
+            </div>
+            <div id="database" class="tab-content">
+                <database-explorer></database-explorer>
+            </div>
+            <div id="queue" class="tab-content">
+                <queue-monitor></queue-monitor>
+            </div>
+            <div id="server" class="tab-content">
+                <server-status></server-status>
+            </div>
+            <div id="tests" class="tab-content">
+                <test-runner></test-runner>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="app.new.js"></script>
+</body>
+</html>
